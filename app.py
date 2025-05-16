@@ -105,9 +105,6 @@ def display_mood_chart(today_data):
         mood_counts = today_data["Mood"].value_counts().reset_index()
         mood_counts.columns = ["Mood", "Count"]
         
-        print("Mood counts for chart:")
-        print(mood_counts)
-        
         fig = px.bar(
             mood_counts, 
             x="Mood", 
