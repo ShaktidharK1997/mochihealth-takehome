@@ -1,6 +1,6 @@
 # Mood of the Queue - Mochi Health Takehome
 
-Hey there! So for my take-home, I built a little Streamlit app to track the mood/sentiment of support tickets over time. Nothing fancy, but hopefully useful!
+Hey there! So for my take-home, I built a Streamlit app to track the mood/sentiment of support tickets over time. Nothing fancy, but hopefully useful!
 
 ## What it does
 
@@ -27,8 +27,8 @@ You can also run it locally by cloning this repo and using Docker-compose.
 ## Next steps
 
 With more time, I'd add:
-- Historical trends beyond just today 
+- integrate this with the support ticket platform to read the ticket information and use an LLM to understand the ticket emotion and automatically create a mood entry based on it. 
+- Understand Historical trends beyond today and create regression models to predict the support tickets in the near future (subject to scale of data available)
 - Data export features
-- More customizable mood options
 
 Lemme know if you need any additional info or have questions!
