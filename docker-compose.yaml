@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  mood-queue-app:
+    build: 
+      context: .
+      dockerfile: DockerFile.mood_tracker
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./credentials.json:/app/credentials.json
+      - ./:/app
+    restart: unless-stopped

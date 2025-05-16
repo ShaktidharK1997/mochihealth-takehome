@@ -1,0 +1,36 @@
+# Git
+.git
+.gitignore
+
+# Environment directories
+venv/
+env/
+.env/
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.pytest_cache/
+
+# Distribution/packaging
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+
+# Local development settings
+.idea/
+.vscode/
+
+# Credentials (include these only in volumes!)
+# credentials.json 
+
+# Other
+README.md
+Dockerfile
+docker-compose.yml
