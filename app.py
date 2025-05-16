@@ -234,10 +234,6 @@ def main():
         sheet_url = f"https://docs.google.com/spreadsheets/d/{spreadsheet.id}"
         st.sidebar.markdown(f"[Open Spreadsheet]({sheet_url})")
         
-        if is_existing:
-            st.success(f"Connected to existing Google Sheet")
-        else:
-            st.info(f"Created new Google Sheet")
         
         st.sidebar.markdown("### Share Spreadsheet")
         st.sidebar.markdown("Share access to view/edit this spreadsheet:")
