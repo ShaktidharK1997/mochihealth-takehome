@@ -84,7 +84,6 @@ def log_mood(sheet, mood, note=""):
 def get_today_data(sheet):
     try:
         data = sheet.get_all_records()
-        print(f"Retrieved {len(data)} records from sheet")
         
         df = pd.DataFrame(data)
         
@@ -93,10 +92,6 @@ def get_today_data(sheet):
             
             today = datetime.now().strftime("%Y-%m-%d")
             today_data = df[df["Timestamp"].dt.strftime("%Y-%m-%d") == today]
-            
-            print(f"Found {len(today_data)} records for today ({today})")
-            if not today_data.empty:
-                print(f"Sample data: {today_data.iloc[0].to_dict()}")
             
             return today_data
         return pd.DataFrame(columns=["Timestamp", "Mood", "Note"])
