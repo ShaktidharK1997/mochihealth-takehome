@@ -254,31 +254,13 @@ def main():
             "🎉": "Celebratory/Excited"
         }
         
-        with col1:
-    st.subheader("Log a Mood")
-    
-    mood_options = ["😊", "😕", "😠", "🎉"]
-    mood_descriptions = {
-        "😊": "Happy/Satisfied",
-        "😕": "Confused/Uncertain",
-        "😠": "Frustrated/Angry",
-        "🎉": "Celebratory/Excited"
-    }
-    
-    # With help text for the overall control
-    mood_selection = st.radio(
-        "Select a mood:",
-        options=mood_options,
-        index=None,
-        key="mood_radio",
-        help="😊: Happy/Satisfied\n😕: Confused/Uncertain\n😠: Frustrated/Angry\n🎉: Celebratory/Excited"
-    )
-    
-    if mood_selection:
-        st.session_state.selected_mood = mood_selection
-        st.success(f"Selected mood: {mood_selection} - {mood_descriptions[mood_selection]}")
-    
-    note = st.text_area("Add a note (optional)", max_chars=100)
+        mood_selection = st.radio(
+            "Select a mood:",
+            mood_options,
+            format_func=lambda x: f"{x} - {mood_descriptions[x]}",
+            index=None,
+            key="mood_radio"
+        )
         
         if mood_selection:
             st.session_state.selected_mood = mood_selection
