@@ -221,7 +221,6 @@ def main():
     try:
         sheet_info = connect_to_sheets()
         
-        # If connect_to_sheets returns None, handle as error
         if sheet_info[0] is None:
             st.error("Failed to connect to Google Sheets: Invalid credentials")
             st.info("Please check your credentials and try again.")
@@ -350,7 +349,7 @@ def main():
         if auto_refresh:
             refresh_interval = st.slider("Refresh interval (seconds)", 5, 30, 60)
             
-            # Display a progress bar for the refresh interval
+            # progress bar for the refresh interval
             refresh_progress = st.progress(0)
             
             # If this is a fresh render or we've completed a cycle
@@ -362,7 +361,6 @@ def main():
                 st.session_state.refresh_counter += 1
                 refresh_progress.progress(0)
                 
-                # Small delay to ensure UI updates
                 time.sleep(0.1)
                 st.rerun()
             else:
@@ -378,7 +376,7 @@ def main():
         
         # Show recent entries
         if not filtered_data.empty:
-            st.subheader("Recent Entries")
+            st.subheader("Live Feed")
             recent_data = filtered_data.sort_values("Timestamp", ascending=False).head(5)
             
             for _, row in recent_data.iterrows():
