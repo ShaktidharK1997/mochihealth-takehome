@@ -100,24 +100,65 @@ def get_today_data(sheet):
         st.error(f"Error fetching data: {str(e)}")
         return pd.DataFrame(columns=["Timestamp", "Mood", "Note"])
 
-def display_mood_chart(today_data):
-    if not today_data.empty:
-        mood_counts = today_data["Mood"].value_counts().reset_index()
-        mood_counts.columns = ["Mood", "Count"]
+def get_data_for_period(sheet, days):
+    try:
+        data = sheet.get_all_records()
+        df = pd.DataFrame(data)
         
-        fig = px.bar(
-            mood_counts, 
-            x="Mood", 
-            y="Count", 
-            title="Today's Mood Distribution",
-            color="Mood",
-            color_discrete_map={
-                "😊": "#76C893",
-                "😕": "#FFD166",
-                "😠": "#EF476F",
-                "🎉": "#118AB2",
-            }
-        )
+        if not df.empty and "Timestamp" in df.columns:
+            df["Timestamp"] = pd.to_datetime(df["Timestamp"], format="%Y-%m-%d %H:%M:%S", errors='coerce')
+            
+            if days > 0:
+                cutoff_date = datetime.now() - pd.Timedelta(days=days)
+                filtered_data = df[df["Timestamp"] >= cutoff_date]
+            else:
+                today = datetime.now().strftime("%Y-%m-%d")
+                filtered_data = df[df["Timestamp"].dt.strftime("%Y-%m-%d") == today]
+            
+            return filtered_data
+        return pd.DataFrame(columns=["Timestamp", "Mood", "Note"])
+    except Exception as e:
+        print(f"Error getting data for period: {str(e)}")
+        st.error(f"Error fetching data: {str(e)}")
+        return pd.DataFrame(columns=["Timestamp", "Mood", "Note"])
+
+def display_mood_chart(data, group_by_day=False):
+    if not data.empty:
+        if group_by_day:
+            # Group by day and mood
+            data['Date'] = data['Timestamp'].dt.date
+            mood_counts = data.groupby(['Date', 'Mood']).size().reset_index(name='Count')
+            
+            fig = px.bar(
+                mood_counts,
+                x="Date",
+                y="Count",
+                color="Mood",
+                title="Mood Distribution Over Time",
+                color_discrete_map={
+                    "😊": "#76C893",
+                    "😕": "#FFD166",
+                    "😠": "#EF476F",
+                    "🎉": "#118AB2",
+                }
+            )
+        else:
+            mood_counts = data["Mood"].value_counts().reset_index()
+            mood_counts.columns = ["Mood", "Count"]
+            
+            fig = px.bar(
+                mood_counts,
+                x="Mood",
+                y="Count",
+                title="Mood Distribution",
+                color="Mood",
+                color_discrete_map={
+                    "😊": "#76C893",
+                    "😕": "#FFD166",
+                    "😠": "#EF476F",
+                    "🎉": "#118AB2",
+                }
+            )
         
         fig.update_layout(
             xaxis_title="Mood",
@@ -127,36 +168,26 @@ def display_mood_chart(today_data):
         
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("No mood data recorded for today yet.")
+        st.info("No mood data recorded for the selected period.")
 
 def main():
     if 'selected_mood' not in st.session_state:
         st.session_state.selected_mood = None
+    if 'refresh_counter' not in st.session_state:
+        st.session_state.refresh_counter = 0
+    if 'last_refresh_time' not in st.session_state:
+        st.session_state.last_refresh_time = datetime.now()
     
     st.sidebar.title("Setup")
     
     # Check if we have credentials in Streamlit secrets
     has_secrets = 'google_credentials' in st.secrets
-    
-    # If no secrets are configured, show the credential upload form
+
     if not has_secrets and 'credentials_dict' not in st.session_state:
         st.sidebar.error("Google credentials not found in Streamlit secrets!")
         st.sidebar.info("Please upload your Google service account credentials file:")
         
-        uploaded_file = st.sidebar.file_uploader("Upload your credentials.json file", type=["json"])
-        if uploaded_file:
-            try:
-                # Read and parse the JSON
-                credentials_content = uploaded_file.read().decode("utf-8")
-                credentials_dict = json.loads(credentials_content)
-                # Store in session state
-                st.session_state.credentials_dict = credentials_dict
-                st.sidebar.success("Credentials uploaded! Refreshing...")
-                st.rerun()
-            except Exception as e:
-                st.sidebar.error(f"Error parsing credentials: {e}")
-        
-        # Provide alternative to paste JSON
+        # Alternative to paste JSON
         st.sidebar.markdown("### Or paste your credentials JSON:")
         credentials_json = st.sidebar.text_area("Paste JSON credentials here:", height=100)
         
@@ -285,31 +316,74 @@ def main():
             st.rerun() 
     
     with col2:
-        st.subheader("Today's Mood Visualization")
+        st.subheader("Mood trends")
+        
+        filter_col1, filter_col2 = st.columns([2, 1])
+        
+        with filter_col1:
+            time_period = st.selectbox(
+                "Select time period:",
+                options=[
+                    ("Today", 0),
+                    ("Last 3 days", 3),
+                    ("Last 7 days", 7),
+                    ("Last 30 days", 30)
+                ],
+                format_func=lambda x: x[0],
+                index=0
+            )
         
         today_data = get_today_data(sheet)
         
-        display_mood_chart(today_data)
+        with filter_col2:
+            group_by_day = st.checkbox("Group by day", value=False)
         
-        if st.checkbox("Auto-refresh (every 30 seconds)"):
-            refresh_interval = 30
-            st.write(f"Chart will refresh every {refresh_interval} seconds")
-            
-            progress_bar = st.progress(0)
-            for i in range(refresh_interval):
-                progress_bar.progress((i + 1) / refresh_interval)
-                time.sleep(1)
-            
-            st.rerun() 
         
-        if not today_data.empty:
+        # Get data for selected period
+        filtered_data = get_data_for_period(sheet, time_period[1])
+        
+        display_mood_chart(filtered_data, group_by_day)
+        
+        # Auto-refresh feature
+        auto_refresh = st.checkbox("Auto-refresh", value=False)
+        
+        if auto_refresh:
+            refresh_interval = st.slider("Refresh interval (seconds)", 5, 30, 60)
+            
+            # Display a progress bar for the refresh interval
+            refresh_progress = st.progress(0)
+            
+            # If this is a fresh render or we've completed a cycle
+            if "last_refresh_time" not in st.session_state or \
+               (datetime.now() - st.session_state.last_refresh_time).total_seconds() >= refresh_interval:
+                
+                # Reset the timer and refresh
+                st.session_state.last_refresh_time = datetime.now()
+                st.session_state.refresh_counter += 1
+                refresh_progress.progress(0)
+                
+                # Small delay to ensure UI updates
+                time.sleep(0.1)
+                st.rerun()
+            else:
+                # Update progress based on elapsed time
+                elapsed = (datetime.now() - st.session_state.last_refresh_time).total_seconds()
+                progress = min(elapsed / refresh_interval, 1.0)
+                refresh_progress.progress(progress)
+                
+                # Rerun if not at 100% yet
+                if progress < 1.0:
+                    time.sleep(0.5)
+                    st.rerun()
+        
+        # Show recent entries
+        if not filtered_data.empty:
             st.subheader("Recent Entries")
-            recent_data = today_data.sort_values("Timestamp", ascending=False).head(5)
+            recent_data = filtered_data.sort_values("Timestamp", ascending=False).head(5)
             
             for _, row in recent_data.iterrows():
-                time_str = row["Timestamp"].strftime("%H:%M:%S")
+                time_str = row["Timestamp"].strftime("%Y-%m-%d %H:%M:%S")
                 st.write(f"{time_str} - {row['Mood']} - {row['Note']}")
 
-                
 if __name__ == "__main__":
     main()
