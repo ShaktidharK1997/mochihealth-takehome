@@ -8,8 +8,8 @@ This app tracks emotional trends in your support queue:
 
 - Log moods with emojis (😊 happy, 😕 confused, 😠 frustrated, 🎉 celebratory)
 - Add notes to provide context
-- See a daily visualization of mood distribution
-- Auto-refreshes every 30 seconds (optional)
+- See a daily visualization of mood distribution with grouping and filtering options
+- Auto-refreshes every 30 seconds (optional and customizable)
 - All data stored in a Google Sheet using a service account
 
 ## Setup 
